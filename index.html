@@ -133,6 +133,8 @@
       </div>
     </div>
 
+    <!-- Add LZ-String for compression -->
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
     <script>
       // Variabel global untuk menyimpan semua data lowongan
       let allJobData = [];
@@ -154,14 +156,38 @@
       const resultsContainer = document.getElementById("resultsContainer");
 
       // --- INISIALISASI SAAT HALAMAN DIMUAT ---
+      // Fungsi untuk menyimpan data ke localStorage dengan compression
+      function saveToLocalStorage(key, data) {
+        try {
+          const compressed = LZString.compressToUTF16(JSON.stringify(data));
+          localStorage.setItem(key, compressed);
+          return true;
+        } catch (e) {
+          console.error('Error saving to localStorage:', e);
+          return false;
+        }
+      }
+
+      // Fungsi untuk mengambil data dari localStorage dengan decompression
+      function getFromLocalStorage(key) {
+        try {
+          const compressed = localStorage.getItem(key);
+          if (!compressed) return null;
+          return JSON.parse(LZString.decompressFromUTF16(compressed));
+        } catch (e) {
+          console.error('Error reading from localStorage:', e);
+          return null;
+        }
+      }
+
       window.addEventListener("load", () => {
         // Cek apakah ada data di localStorage
-        const cachedData = localStorage.getItem("cachedJobData");
+        const cachedData = getFromLocalStorage("cachedJobData");
         const lastUpdated = localStorage.getItem("lastUpdated");
 
         if (cachedData) {
           console.log("Memuat data dari cache...");
-          allJobData = JSON.parse(cachedData);
+          allJobData = cachedData;
 
           populateKabupatenFilter();
           populateStudiFilter();
@@ -269,8 +295,14 @@
           // Simpan data baru ke global dan localStorage
           allJobData = semuaLowongan;
           const updateTime = new Date().toLocaleString("id-ID");
-          localStorage.setItem("cachedJobData", JSON.stringify(allJobData));
-          localStorage.setItem("lastUpdated", updateTime);
+          
+          // Coba simpan data dengan compression
+          const saveSuccess = saveToLocalStorage("cachedJobData", allJobData);
+          if (saveSuccess) {
+            localStorage.setItem("lastUpdated", updateTime);
+          } else {
+            showMessage("warning", "Data berhasil dimuat tetapi tidak dapat disimpan ke cache local. Data akan hilang saat halaman di-refresh.");
+          }
 
           // Perbarui UI
           populateKabupatenFilter();
