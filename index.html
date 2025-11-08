@@ -1,482 +1,232 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Filter Lowongan Magang (Live Data)</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Lowongan Magang</title>
     <!-- Memuat Tailwind CSS untuk styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Menggunakan font Inter */
-      body {
-        font-family: "Inter", sans-serif;
-      }
-      /* Style untuk menyembunyikan opsi dropdown saat dicari */
-      select option.hidden {
-        display: none;
-      }
+        /* Menggunakan font Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style tambahan untuk textarea */
+        textarea::placeholder {
+            color: #9ca3af;
+        }
     </style>
-  </head>
-  <body class="bg-gray-100 min-h-screen font-sans antialiased">
+</head>
+<body class="bg-gray-100 min-h-screen font-sans antialiased">
+
     <div class="container mx-auto p-6 md:p-10">
-      <header class="text-center mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
-          Data Lowongan Magang
-        </h1>
-        <p class="text-lg text-gray-600 mt-2">
-          Sistem Filter Lowongan Berdasarkan Wilayah & Program Studi
-        </p>
-      </header>
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Data Lowongan Magang</h1>
+            <p class="text-lg text-gray-600 mt-2">Sistem Filter Lowongan Berdasarkan Wilayah</p>
+        </header>
 
-      <!-- Area Kontrol Data -->
-      <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
-        <label class="block text-lg font-semibold text-gray-700 mb-3">
-          Manajemen Data Lowongan:
-        </label>
-        <button
-          id="refreshButton"
-          class="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400"
-        >
-          Perbarui Data Lowongan (Refresh)
-        </button>
-
-        <!-- Progress Bar (Awalnya tersembunyi) -->
-        <div id="progressContainer" class="hidden mt-4">
-          <div class="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              id="progressBar"
-              class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-              style="width: 0%"
-            ></div>
-          </div>
-          <div id="progressText" class="text-sm text-center text-gray-600 mt-2">
-            Memulai...
-          </div>
+        <!-- Area Input Data -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <label for="fileInput" class="block text-lg font-semibold text-gray-700 mb-3">
+                Unggah File JSON Lowongan Anda:
+            </label>
+            <input type="file" id="fileInput" accept=".json"
+                   class="block w-full text-sm text-gray-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-lg file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-blue-50 file:text-blue-700
+                          hover:file:bg-blue-100
+                          cursor-pointer"/>
+            
+            <!-- Tombol "Proses Data" tidak lagi diperlukan, file diproses saat dipilih -->
+            
+            <!-- Pesan status (sukses atau error) -->
+            <div id="messageArea" class="mt-4 text-sm font-medium"></div>
         </div>
 
-        <!-- Pesan status (sukses atau error) -->
-        <div id="messageArea" class="mt-4 text-sm font-medium text-gray-600">
-          Silakan muat data untuk memulai.
-        </div>
-      </div>
+        <!-- Area Filter (Awalnya tersembunyi) -->
+        <div id="filterSection" class="hidden mb-6">
+            <label for="kabupatenSearch" class="block text-lg font-semibold text-gray-700 mb-3">
+                Cari Kabupaten:
+            </label>
+            <input type="text" id="kabupatenSearch" placeholder="Ketik nama kabupaten..."
+                   class="w-full md:w-1/3 p-3 mb-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
 
-      <!-- Area Filter (Awalnya tersembunyi) -->
-      <div
-        id="filterSection"
-        class="hidden mb-8 grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        <!-- Filter Kabupaten -->
-        <div class="bg-white p-6 rounded-2xl shadow-lg">
-          <label
-            for="kabupatenSearch"
-            class="block text-lg font-semibold text-gray-700 mb-3"
-          >
-            Cari Kabupaten:
-          </label>
-          <input
-            type="text"
-            id="kabupatenSearch"
-            placeholder="Ketik nama kabupaten..."
-            class="w-full p-3 mb-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-
-          <label
-            for="kabupatenFilter"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Filter berdasarkan Kabupaten:
-          </label>
-          <select
-            id="kabupatenFilter"
-            class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <!-- Opsi filter akan diisi oleh JavaScript -->
-          </select>
+            <label for="kabupatenFilter" class="block text-lg font-semibold text-gray-700 mb-3">
+                Filter berdasarkan Kabupaten:
+            </label>
+            <select id="kabupatenFilter"
+                class="w-full md:w-1/3 p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <!-- Opsi filter akan diisi oleh JavaScript -->
+            </select>
         </div>
 
-        <!-- Filter Program Studi -->
-        <div class="bg-white p-6 rounded-2xl shadow-lg">
-          <label
-            for="studiSearch"
-            class="block text-lg font-semibold text-gray-700 mb-3"
-          >
-            Cari Program Studi:
-          </label>
-          <input
-            type="text"
-            id="studiSearch"
-            placeholder="Ketik nama program studi..."
-            class="w-full p-3 mb-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-
-          <label
-            for="studiFilter"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Filter berdasarkan Program Studi:
-          </label>
-          <select
-            id="studiFilter"
-            class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <!-- Opsi filter akan diisi oleh JavaScript -->
-          </select>
+        <!-- Area Hasil Lowongan -->
+        <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Kartu lowongan akan diisi oleh JavaScript -->
         </div>
-      </div>
 
-      <!-- Area Hasil Lowongan -->
-      <div
-        id="resultsContainer"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        <!-- Kartu lowongan akan diisi oleh JavaScript -->
-      </div>
     </div>
 
-    <!-- Add LZ-String for compression -->
-    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
     <script>
-      // Variabel global untuk menyimpan semua data lowongan
-      let allJobData = [];
+        // Variabel global untuk menyimpan semua data lowongan
+        let allJobData = [];
 
-      // Menghubungkan elemen HTML ke JavaScript
-      const refreshButton = document.getElementById("refreshButton");
-      const progressContainer = document.getElementById("progressContainer");
-      const progressBar = document.getElementById("progressBar");
-      const progressText = document.getElementById("progressText");
+        // Menghubungkan elemen HTML ke JavaScript
+        const fileInput = document.getElementById('fileInput');
+        const messageArea = document.getElementById('messageArea');
+        const filterSection = document.getElementById('filterSection');
+        const kabupatenSearch = document.getElementById('kabupatenSearch'); // Elemen baru
+        const kabupatenFilter = document.getElementById('kabupatenFilter');
+        const resultsContainer = document.getElementById('resultsContainer');
 
-      const messageArea = document.getElementById("messageArea");
-      const filterSection = document.getElementById("filterSection");
+        // Event listener untuk input file
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            
+            // Reset tampilan
+            allJobData = [];
+            resultsContainer.innerHTML = '';
+            kabupatenFilter.innerHTML = '';
+            filterSection.classList.add('hidden');
 
-      const kabupatenSearch = document.getElementById("kabupatenSearch");
-      const kabupatenFilter = document.getElementById("kabupatenFilter");
-      const studiSearch = document.getElementById("studiSearch");
-      const studiFilter = document.getElementById("studiFilter");
-
-      const resultsContainer = document.getElementById("resultsContainer");
-
-      // --- INISIALISASI SAAT HALAMAN DIMUAT ---
-      // Fungsi untuk menyimpan data ke localStorage dengan compression
-      function saveToLocalStorage(key, data) {
-        try {
-          const compressed = LZString.compressToUTF16(JSON.stringify(data));
-          localStorage.setItem(key, compressed);
-          return true;
-        } catch (e) {
-          console.error('Error saving to localStorage:', e);
-          return false;
-        }
-      }
-
-      // Fungsi untuk mengambil data dari localStorage dengan decompression
-      function getFromLocalStorage(key) {
-        try {
-          const compressed = localStorage.getItem(key);
-          if (!compressed) return null;
-          return JSON.parse(LZString.decompressFromUTF16(compressed));
-        } catch (e) {
-          console.error('Error reading from localStorage:', e);
-          return null;
-        }
-      }
-
-      window.addEventListener("load", () => {
-        // Cek apakah ada data di localStorage
-        const cachedData = getFromLocalStorage("cachedJobData");
-        const lastUpdated = localStorage.getItem("lastUpdated");
-
-        if (cachedData) {
-          console.log("Memuat data dari cache...");
-          allJobData = cachedData;
-
-          populateKabupatenFilter();
-          populateStudiFilter();
-          renderJobs();
-
-          filterSection.classList.remove("hidden");
-          showMessage(
-            "success",
-            `Berhasil memuat ${allJobData.length} data dari cache. Terakhir diperbarui: ${lastUpdated}`
-          );
-        } else {
-          showMessage(
-            "info",
-            'Silakan klik "Perbarui Data Lowongan" untuk mengambil data terbaru.'
-          );
-        }
-      });
-
-      // --- PENGAMBILAN DATA ---
-
-      // Event listener untuk tombol "Refresh Data"
-      refreshButton.addEventListener("click", ambilSemuaData);
-
-      // Fungsi ini akan mengambil semua data lowongan halaman per halaman
-      async function ambilSemuaData() {
-        // Tampilkan progress bar dan nonaktifkan tombol
-        refreshButton.disabled = true;
-        progressContainer.classList.remove("hidden");
-        progressBar.style.width = "0%";
-        progressText.textContent = "Memulai pengambilan data...";
-        showMessage("info", "Sedang mengambil data terbaru dari server...");
-
-        // --- INFORMASI KUNCI ---
-        const baseUrl =
-          "https://maganghub.kemnaker.go.id/be/v1/api/list/vacancies-aktif?order_by=jumlah_kuota&order_direction=DESC";
-        const itemsPerHalaman = 100; // Kita tentukan 100 item per halaman
-        const namaArrayData = "data";
-        // --- BATAS PENYESUAIAN ---
-
-        let semuaLowongan = []; // Array kosong untuk hasil baru
-
-        try {
-          // 1. Ambil halaman pertama untuk mendapatkan total data
-          const urlTargetPage1 = `${baseUrl}&limit=${itemsPerHalaman}&page=1`;
-          console.log("Mengambil Halaman 1 (untuk metadata)...");
-          progressText.textContent = "Menghubungi server...";
-
-          const responsePage1 = await fetch(urlTargetPage1);
-          if (!responsePage1.ok)
-            throw new Error(
-              `Gagal menghubungi server: Status ${responsePage1.status}`
-            );
-
-          const dataPage1 = await responsePage1.json();
-
-          const totalItems = 20000;
-          const totalHalaman = Math.ceil(totalItems / itemsPerHalaman);
-
-          console.log(
-            `Total data: ${totalItems} lowongan. Total halaman: ${totalHalaman}.`
-          );
-          semuaLowongan.push(...dataPage1[namaArrayData]);
-
-          // Update progress bar
-          let progress = (1 / totalHalaman) * 100;
-          progressBar.style.width = `${progress}%`;
-          progressText.textContent = `Mengambil Halaman 1/${totalHalaman}...`;
-
-          // 2. Ambil halaman sisanya (mulai dari halaman 2)
-          for (let i = 2; i <= totalHalaman; i++) {
-            const urlTarget = `${baseUrl}&limit=${itemsPerHalaman}&page=${i}`;
-            console.log(`Mengambil Halaman ${i}/${totalHalaman}...`);
-
-            const respons = await fetch(urlTarget);
-            if (!respons.ok) {
-              console.warn(
-                `Gagal mengambil halaman ${i}: Status ${respons.status}`
-              );
-              continue; // Lanjut ke halaman berikutnya jika ada error
+            if (!file) {
+                // Jangan tampilkan error jika pengguna membatalkan pemilihan file
+                showMessage('info', 'Silakan pilih file JSON untuk diproses.');
+                return;
             }
 
-            const dataHalaman = await respons.json();
-
-            if (
-              dataHalaman[namaArrayData] &&
-              Array.isArray(dataHalaman[namaArrayData])
-            ) {
-              semuaLowongan.push(...dataHalaman[namaArrayData]);
+            if (file.type !== 'application/json') {
+                showMessage('error', 'File harus berformat .json');
+                return;
             }
 
-            // Update progress bar
-            progress = (i / totalHalaman) * 100;
-            progressBar.style.width = `${progress}%`;
-            progressText.textContent = `Mengambil Halaman ${i}/${totalHalaman}...`;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const rawData = e.target.result;
+                try {
+                    const parsedData = JSON.parse(rawData);
 
-            // Beri jeda 200 milidetik agar tidak membebani server
-            await new Promise((resolve) => setTimeout(resolve, 200));
-          }
+                    // Logika untuk menangani dua format input yang mungkin:
+                    // 1. Objek dengan key "data" berisi array: { "data": [...] }
+                    // 2. Langsung array: [ ... ]
+                    if (parsedData && parsedData.data && Array.isArray(parsedData.data)) {
+                        allJobData = parsedData.data;
+                    } else if (Array.isArray(parsedData)) {
+                        allJobData = parsedData;
+                    } else {
+                        throw new Error('Format data tidak dikenal. Harap file berisi array JSON lowongan, atau objek yang memiliki key "data" berisi array tersebut.');
+                    }
 
-          // 3. Proses selesai
-          console.log(
-            `--- SELESAI --- Total ${semuaLowongan.length} data berhasil dikumpulkan.`
-          );
+                    if (allJobData.length === 0) {
+                        throw new Error('Data ditemukan, tetapi tidak ada lowongan di dalamnya.');
+                    }
 
-          // Simpan data baru ke global dan localStorage
-          allJobData = semuaLowongan;
-          const updateTime = new Date().toLocaleString("id-ID");
-          
-          // Coba simpan data dengan compression
-          const saveSuccess = saveToLocalStorage("cachedJobData", allJobData);
-          if (saveSuccess) {
-            localStorage.setItem("lastUpdated", updateTime);
-          } else {
-            showMessage("warning", "Data berhasil dimuat tetapi tidak dapat disimpan ke cache local. Data akan hilang saat halaman di-refresh.");
-          }
+                    showMessage('success', `Berhasil memuat ${allJobData.length} data lowongan dari file ${file.name}.`);
+                    
+                    // Setelah data berhasil dimuat, isi filter dan tampilkan lowongan
+                    populateFilter();
+                    renderJobs();
+                    filterSection.classList.remove('hidden');
 
-          // Perbarui UI
-          populateKabupatenFilter();
-          populateStudiFilter();
-          renderJobs(); // Tampilkan semua lowongan
-          filterSection.classList.remove("hidden");
-          showMessage(
-            "success",
-            `Berhasil memperbarui ${allJobData.length} data. Terakhir diperbarui: ${updateTime}`
-          );
-        } catch (error) {
-          console.error("Error saat mengambil data:", error);
-          showMessage("error", `Gagal mengambil data: ${error.message}`);
-        } finally {
-          // Sembunyikan progress bar dan aktifkan kembali tombol
-          refreshButton.disabled = false;
-          progressContainer.classList.add("hidden");
-        }
-      }
+                } catch (error) {
+                    showMessage('error', `Gagal memproses JSON dari file. Pastikan formatnya benar. (Error: ${error.message})`);
+                    console.error('JSON Parsing Error:', error);
+                }
+            };
 
-      // --- LOGIKA FILTER DAN RENDER ---
+            reader.onerror = () => {
+                showMessage('error', `Gagal membaca file: ${reader.error.message}`);
+            };
 
-      // Event listener untuk filter
-      kabupatenFilter.addEventListener("change", renderJobs);
-      studiFilter.addEventListener("change", renderJobs);
-
-      // Event listener untuk search bar
-      kabupatenSearch.addEventListener("input", () =>
-        filterDropdown(kabupatenSearch, kabupatenFilter)
-      );
-      studiSearch.addEventListener("input", () =>
-        filterDropdown(studiSearch, studiFilter)
-      );
-
-      // Fungsi untuk mem-filter opsi di dropdown
-      function filterDropdown(searchInput, selectElement) {
-        const searchTerm = searchInput.value.toLowerCase();
-        const options = selectElement.options;
-
-        for (let i = 0; i < options.length; i++) {
-          const optionText = options[i].textContent.toLowerCase();
-          const isMatch = optionText.includes(searchTerm);
-          const isDefault = options[i].value === "all";
-
-          // Tampilkan jika cocok ATAU jika itu opsi "Semua"
-          options[i].classList.toggle("hidden", !(isMatch || isDefault));
-        }
-      }
-
-      // Fungsi untuk mengisi dropdown filter kabupaten
-      function populateKabupatenFilter() {
-        const kabupatens = new Set(
-          allJobData.map((item) => item.perusahaan.nama_kabupaten)
-        );
-        kabupatenFilter.innerHTML =
-          '<option value="all">Semua Kabupaten</option>'; // Opsi default
-
-        // Urutkan kabupaten berdasarkan abjad
-        [...kabupatens].sort().forEach((kab) => {
-          if (kab) {
-            const option = document.createElement("option");
-            option.value = kab;
-            option.textContent = kab;
-            kabupatenFilter.appendChild(option);
-          }
-        });
-      }
-
-      // Fungsi untuk mengisi dropdown filter program studi
-      function populateStudiFilter() {
-        const allStudi = new Set();
-
-        // Ekstrak semua program studi (yang merupakan JSON string)
-        allJobData.forEach((item) => {
-
-          if (item.program_studi) {
-            try {
-              const studiList = JSON.parse(item.program_studi);
-              if (Array.isArray(studiList)) {
-                studiList.forEach((s) => allStudi.add(s.title.toLowerCase()));
-              }
-            } catch (e) {
-              /* Abaikan jika parsing gagal */
-            }
-          }
+            reader.readAsText(file);
         });
 
-        studiFilter.innerHTML =
-          '<option value="all">Semua Program Studi</option>'; // Opsi default
+        // Event listener baru untuk search bar
+        kabupatenSearch.addEventListener('input', () => {
+            const searchTerm = kabupatenSearch.value.toLowerCase();
+            const options = kabupatenFilter.options;
 
-        // Urutkan program studi berdasarkan abjad
-        [...allStudi].sort().forEach((studi) => {
-          if (studi) {
-            const option = document.createElement("option");
-            option.value = studi;
-            option.textContent = studi;
-            studiFilter.appendChild(option);
-          }
+            // Loop melalui semua opsi di dropdown
+            for (let i = 0; i < options.length; i++) {
+                const optionText = options[i].textContent.toLowerCase();
+                
+                // Tampilkan jika cocok DENGAN pencarian, atau jika itu opsi "Semua Kabupaten"
+                if (optionText.includes(searchTerm) || options[i].value === 'all') {
+                    options[i].style.display = '';
+                } else {
+                    // Sembunyikan jika tidak cocok
+                    options[i].style.display = 'none';
+                }
+            }
         });
-      }
 
-      // Fungsi untuk menampilkan kartu-kartu lowongan berdasarkan filter
-      function renderJobs() {
-        const selectedKabupaten = kabupatenFilter.value;
-        const selectedStudi = studiFilter.value;
-        resultsContainer.innerHTML = ""; // Kosongkan hasil sebelumnya
+        // Event listener untuk dropdown filter
+        kabupatenFilter.addEventListener('change', renderJobs);
 
-        let filteredData = allJobData;
-
-        // 1. Filter berdasarkan Kabupaten
-        if (selectedKabupaten !== "all") {
-          filteredData = filteredData.filter(
-            (item) => item.perusahaan.nama_kabupaten === selectedKabupaten
-          );
+        // Fungsi untuk mengisi dropdown filter dengan data kabupaten yang unik
+        function populateFilter() {
+            // Menggunakan Set untuk mendapatkan nilai unik
+            const kabupatens = new Set(allJobData.map(item => item.perusahaan.nama_kabupaten));
+            
+            // Menambahkan opsi "Semua"
+            kabupatenFilter.innerHTML = '<option value="all">Semua Kabupaten</option>';
+            
+            // Menambahkan setiap kabupaten ke dropdown
+            kabupatens.forEach(kab => {
+                if(kab) { // Memastikan bukan null atau undefined
+                    const option = document.createElement('option');
+                    option.value = kab;
+                    option.textContent = kab;
+                    kabupatenFilter.appendChild(option);
+                }
+            });
         }
 
-        // 2. Filter berdasarkan Program Studi (dari data yang sudah difilter kabupaten)
-        if (selectedStudi !== "all") {
-          filteredData = filteredData.filter((item) => {
-            if (!item.program_studi) return false;
-            try {
-              const studiList = JSON.parse(item.program_studi);
-              if (Array.isArray(studiList)) {
-                // Cek apakah salah satu program studi di lowongan cocok dengan filter
-                return studiList.some((s) => s.title.toLowerCase() === selectedStudi);
-              }
-            } catch (e) {
-              return false;
+        // Fungsi untuk menampilkan kartu-kartu lowongan berdasarkan filter
+        function renderJobs() {
+            const selectedKabupaten = kabupatenFilter.value;
+            resultsContainer.innerHTML = ''; // Kosongkan hasil sebelumnya
+
+            // Filter data berdasarkan pilihan dropdown
+            const filteredData = selectedKabupaten === 'all' 
+                ? allJobData 
+                : allJobData.filter(item => item.perusahaan.nama_kabupaten === selectedKabupaten);
+
+            if (filteredData.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-gray-600 col-span-full text-center">Tidak ada lowongan yang sesuai dengan filter ini.</p>';
+                return;
             }
-            return false;
-          });
-        }
 
-        if (filteredData.length === 0) {
-          resultsContainer.innerHTML =
-            '<p class="text-gray-600 col-span-full text-center">Tidak ada lowongan yang sesuai dengan filter ini.</p>';
-          return;
-        }
+            // Buat kartu untuk setiap item lowongan yang sudah difilter
+            filteredData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col justify-between';
 
-        // Buat kartu untuk setiap item lowongan yang sudah difilter
-        filteredData.forEach((item) => {
-          const card = document.createElement("div");
-          card.className =
-            "bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col justify-between";
+                // Parsing 'program_studi' yang merupakan string JSON
+                let programStudiHtml = '<p class="text-sm text-gray-500">Program studi tidak tersedia.</p>';
+                if (item.program_studi) {
+                    try {
+                        const studiList = JSON.parse(item.program_studi);
+                        if (Array.isArray(studiList) && studiList.length > 0) {
+                            // Ambil 'title' dari setiap objek dan gabungkan
+                            const titles = studiList.map(s => s.title).join(', ');
+                            programStudiHtml = `<p class="text-sm text-gray-600"><span class="font-semibold">Program Studi:</span> ${titles}</p>`;
+                        }
+                    } catch (e) {
+                        console.error('Gagal parse program_studi:', e);
+                        programStudiHtml = '<p class="text-sm text-red-500">Gagal memuat program studi.</p>';
+                    }
+                }
 
-          // Parsing 'program_studi' untuk ditampilkan di kartu
-          let programStudiHtml =
-            '<p class="text-sm text-gray-500">Program studi tidak tersedia.</p>';
-          if (item.program_studi) {
-            try {
-              const studiList = JSON.parse(item.program_studi);
-              if (Array.isArray(studiList) && studiList.length > 0) {
-                const titles = studiList.map((s) => s.title.toLowerCase()).join(", ");
-                programStudiHtml = `<p class="text-sm text-gray-600"><span class="font-semibold">Program Studi:</span> ${titles}</p>`;
-              }
-            } catch (e) {
-              programStudiHtml =
-                '<p class="text-sm text-red-500">Gagal memuat program studi.</p>';
-            }
-          }
-
-          // Mengisi konten kartu
-          card.innerHTML = `
+                // Mengisi konten kartu
+                card.innerHTML = `
                     <div>
-                        <h3 class="text-xl font-bold text-blue-800 mb-2">${
-                          item.posisi
-                        }</h3>
-                        <p class="text-md font-semibold text-gray-700">${
-                          item.perusahaan.nama_perusahaan
-                        }</p>
-                        <p class="text-sm text-gray-500 mb-4">${
-                          item.perusahaan.nama_kabupaten ||
-                          "Lokasi tidak diketahui"
-                        }, ${item.perusahaan.nama_provinsi || ""}</p>
+                        <h3 class="text-xl font-bold text-blue-800 mb-2">${item.posisi}</h3>
+                        <p class="text-md font-semibold text-gray-700">${item.perusahaan.nama_perusahaan}</p>
+                        <p class="text-sm text-gray-500 mb-4">${item.perusahaan.nama_kabupaten}, ${item.perusahaan.nama_provinsi}</p>
                         <div class="border-t border-gray-200 pt-3 mt-3">
                             ${programStudiHtml}
                         </div>
@@ -487,32 +237,34 @@
                         Lihat Detail & Lamar
                     </button>
                 `;
-          resultsContainer.appendChild(card);
+                resultsContainer.appendChild(card);
+            });
+        }
+
+        // Event listener untuk tombol "Lamar" (menggunakan event delegation)
+        resultsContainer.addEventListener('click', (e) => {
+            // Cek apakah yang diklik adalah tombol "apply-button"
+            if (e.target.classList.contains('apply-button')) {
+                const idPosisi = e.target.dataset.idposisi;
+                if (idPosisi) {
+                    const url = `https://maganghub.kemnaker.go.id/lowongan/view/${idPosisi}`;
+                    // Buka URL di tab baru
+                    window.open(url, '_blank');
+                }
+            }
         });
-      }
 
-      // Event listener untuk tombol "Lamar" (menggunakan event delegation)
-      resultsContainer.addEventListener("click", (e) => {
-        if (e.target.classList.contains("apply-button")) {
-          const idPosisi = e.target.dataset.idposisi;
-          if (idPosisi) {
-            const url = `https://maganghub.kemnaker.go.id/lowongan/view/${idPosisi}`;
-            window.open(url, "_blank");
-          }
+        // Fungsi helper untuk menampilkan pesan status
+        function showMessage(type, message) {
+            messageArea.textContent = message;
+            if (type === 'success') {
+                messageArea.className = 'mt-4 text-sm font-medium text-green-600';
+            } else if (type === 'error') {
+                messageArea.className = 'mt-4 text-sm font-medium text-red-600';
+            } else {
+                messageArea.className = 'mt-4 text-sm font-medium text-gray-600';
+            }
         }
-      });
-
-      // Fungsi helper untuk menampilkan pesan status
-      function showMessage(type, message) {
-        messageArea.textContent = message;
-        if (type === "success") {
-          messageArea.className = "mt-4 text-sm font-medium text-green-600";
-        } else if (type === "error") {
-          messageArea.className = "mt-4 text-sm font-medium text-red-600";
-        } else {
-          messageArea.className = "mt-4 text-sm font-medium text-gray-600";
-        }
-      }
     </script>
-  </body>
+</body>
 </html>
